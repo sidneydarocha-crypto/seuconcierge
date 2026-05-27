@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SeuConcierge — Arquitetura Técnica</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --gold:#C9A96E;--gold-light:#E8D5A3;--gold-dark:#8B6D3F;
+  --dark:#0D0D0D;--dark-2:#111;--dark-3:#181818;--dark-4:#202020;--dark-5:#2A2A2A;
+  --text:#F0EDE8;--text-muted:#8A8680;--text-dim:#4A4845;
+  --green:#2A6B5C;--green-light:#3D9B87;
+  --blue:#1A3A5C;--blue-light:#4A8BC0;
+  --purple:#3A2A5C;--purple-light:#8A6BC0;
+  --red-light:#C0504A;
+  --border:rgba(201,169,110,0.14);--border-subtle:rgba(255,255,255,0.05);
+  --mono:'JetBrains Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--dark);color:var(--text);font-family:'DM Sans',sans-serif;font-weight:300;display:flex;flex-direction:column}
+
+/* ── TOPBAR ── */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 28px;height:56px;flex-shrink:0;
+  background:var(--dark-2);border-bottom:1px solid var(--border-subtle);z-index:20;
+}
+.logo{font-family:'DM Serif Display',serif;font-size:1.05rem;color:var(--text);display:flex;align-items:center;gap:10px}
+.logo span{color:var(--gold)}
+.logo-icon{width:28px;height:28px;border-radius:8px;background:var(--dark-4);border:1px solid var(--border);display:grid;place-items:center}
+.logo-icon svg{width:14px;height:14px}
+.doc-title{font-size:.78rem;color:var(--text-dim);letter-spacing:.06em}
+.doc-version{font-size:.7rem;color:var(--gold);background:rgba(201,169,110,0.1);border:1px solid var(--border);padding:3px 10px;border-radius:100px;letter-spacing:.06em}
+
+/* ── TABS ── */
+.tabs{
+  display:flex;gap:0;border-bottom:1px solid var(--border-subtle);
+  background:var(--dark-2);flex-shrink:0;padding:0 28px;
+}
+.tab{
+  padding:12px 20px;font-size:.82rem;color:var(--text-dim);cursor:pointer;
+  border-bottom:2px solid transparent;transition:all .2s;letter-spacing:.02em;
+  display:flex;align-items:center;gap:8px;
+}
+.tab:hover{color:var(--text-muted)}
+.tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+.tab-icon{font-size:.9rem}
+
+/* ── MAIN ── */
+.main{flex:1;overflow:hidden;display:flex}
+.panel{display:none;flex:1;overflow:auto;padding:28px}
+.panel.active{display:flex;flex-direction:column}
+.panel::-webkit-scrollbar{width:4px}
+.panel::-webkit-scrollbar-track{background:transparent}
+.panel::-webkit-scrollbar-thumb{background:var(--dark-5);border-radius:2px}
+
+/* ── PANEL HEADER ── */
+.panel-header{margin-bottom:28px}
+.panel-header h2{font-family:'DM Serif Display',serif;font-size:1.6rem;font-weight:400;margin-bottom:6px}
+.panel-header p{font-size:.85rem;color:var(--text-muted);line-height:1.6;max-width:700px}
+
+/* ══════════════════════════
+   PAINEL 1 — ARQUITETURA GERAL
+══════════════════════════ */
+.arch-diagram{display:flex;flex-direction:column;gap:3px;flex:1}
+.arch-layer{
+  display:flex;align-items:stretch;gap:3px;
+  animation:layerIn .4s ease both;
+}
+.arch-layer:nth-child(1){animation-delay:.05s}
+.arch-layer:nth-child(2){animation-delay:.1s}
+.arch-layer:nth-child(3){animation-delay:.15s}
+.arch-layer:nth-child(4){animation-delay:.2s}
+.arch-layer:nth-child(5){animation-delay:.25s}
+@keyframes layerIn{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:none}}
+.layer-label{
+  width:130px;flex-shrink:0;display:flex;align-items:center;justify-content:flex-end;
+  padding-right:16px;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--text-dim);
+}
+.layer-nodes{display:flex;gap:3px;flex:1}
+.arch-node{
+  flex:1;background:var(--dark-3);border:1px solid var(--border-subtle);
+  border-radius:10px;padding:14px 16px;cursor:pointer;
+  transition:all .2s;position:relative;overflow:hidden;
+  display:flex;flex-direction:column;gap:5px;
+}
+.arch-node:hover{border-color:var(--border);transform:translateY(-2px);z-index:5}
+.arch-node.active-node{border-color:var(--gold);background:rgba(201,169,110,0.06)}
+.arch-node::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  opacity:0;transition:opacity .3s;
+}
+.arch-node:hover::before,.arch-node.active-node::before{opacity:1}
+.node-icon{font-size:1.1rem}
+.node-name{font-size:.82rem;font-weight:500;color:var(--text)}
+.node-desc{font-size:.72rem;color:var(--text-muted);line-height:1.4}
+.node-tech{font-family:var(--mono);font-size:.65rem;color:var(--text-dim);margin-top:4px}
+
+/* Cores por camada */
+.layer-channel .arch-node::before{background:linear-gradient(90deg,transparent,var(--blue-light),transparent)}
+.layer-gateway .arch-node::before{background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+.layer-core .arch-node::before{background:linear-gradient(90deg,transparent,var(--purple-light),transparent)}
+.layer-integration .arch-node::before{background:linear-gradient(90deg,transparent,var(--green-light),transparent)}
+.layer-infra .arch-node::before{background:linear-gradient(90deg,transparent,var(--text-dim),transparent)}
+.layer-channel .arch-node{border-top:1px solid rgba(74,139,192,0.2)}
+.layer-gateway .arch-node{border-top:1px solid rgba(201,169,110,0.2)}
+.layer-core .arch-node{border-top:1px solid rgba(138,107,192,0.2)}
+.layer-integration .arch-node{border-top:1px solid rgba(61,155,135,0.2)}
+
+/* Detail panel */
+.detail-panel{
+  width:320px;flex-shrink:0;margin-left:16px;
+  background:var(--dark-3);border:1px solid var(--border-subtle);
+  border-radius:14px;padding:24px;
+  animation:detailIn .25s ease both;
+  align-self:flex-start;position:sticky;top:0;
+}
+@keyframes detailIn{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
+.detail-panel h3{font-family:'DM Serif Display',serif;font-size:1.1rem;font-weight:400;margin-bottom:8px}
+.detail-panel .d-desc{font-size:.83rem;color:var(--text-muted);line-height:1.65;margin-bottom:16px}
+.detail-section{margin-bottom:14px}
+.detail-section-label{font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;display:block}
+.detail-item{
+  display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;
+  font-size:.78rem;color:var(--text-muted);line-height:1.5;
+}
+.detail-item::before{content:'›';color:var(--gold);flex-shrink:0;margin-top:1px}
+.code-tag{
+  font-family:var(--mono);font-size:.7rem;
+  background:var(--dark-4);border:1px solid var(--border-subtle);
+  color:var(--green-light);padding:2px 8px;border-radius:4px;
+  display:inline-block;margin:2px;
+}
+
+/* ══════════════════════════
+   PAINEL 2 — FLUXO DE CONVERSA
+══════════════════════════ */
+.flow-layout{display:grid;grid-template-columns:1fr 340px;gap:24px;flex:1;align-items:start}
+.flow-diagram{display:flex;flex-direction:column;gap:0}
+.flow-step{
+  display:flex;gap:16px;position:relative;padding-bottom:0;
+}
+.flow-connector{
+  display:flex;flex-direction:column;align-items:center;flex-shrink:0;width:36px;
+}
+.flow-dot{
+  width:36px;height:36px;border-radius:10px;
+  display:grid;place-items:center;font-size:.85rem;flex-shrink:0;
+  border:1px solid var(--border-subtle);background:var(--dark-3);
+  transition:all .2s;cursor:pointer;
+}
+.flow-dot:hover,.flow-step.active-step .flow-dot{border-color:var(--gold);background:rgba(201,169,110,0.1)}
+.flow-line{width:1px;flex:1;min-height:16px;background:var(--border-subtle);margin:2px 0}
+.flow-content{
+  background:var(--dark-3);border:1px solid var(--border-subtle);
+  border-radius:12px;padding:14px 18px;margin-bottom:6px;flex:1;
+  cursor:pointer;transition:all .2s;
+}
+.flow-content:hover,.flow-step.active-step .flow-content{border-color:var(--border);background:var(--dark-4)}
+.flow-step.active-step .flow-content{border-color:var(--gold)}
+.flow-step-title{font-size:.88rem;font-weight:500;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.flow-step-desc{font-size:.78rem;color:var(--text-muted);line-height:1.5}
+.flow-badge{
+  font-size:.62rem;padding:2px 8px;border-radius:100px;font-weight:400;letter-spacing:.04em;
+}
+.fb-ai{background:rgba(138,107,192,0.15);color:var(--purple-light);border:1px solid rgba(138,107,192,0.2)}
+.fb-api{background:rgba(61,155,135,0.15);color:var(--green-light);border:1px solid rgba(61,155,135,0.2)}
+.fb-human{background:rgba(201,169,110,0.12);color:var(--gold);border:1px solid var(--border)}
+.fb-system{background:rgba(74,139,192,0.12);color:var(--blue-light);border:1px solid rgba(74,139,192,0.2)}
+
+/* Flow detail side */
+.flow-detail{
+  background:var(--dark-3);border:1px solid var(--border-subtle);
+  border-radius:14px;padding:22px;position:sticky;top:0;
+}
+.flow-detail h3{font-family:'DM Serif Display',serif;font-size:1.05rem;font-weight:400;margin-bottom:10px;color:var(--gold)}
+.flow-detail p{font-size:.82rem;color:var(--text-muted);line-height:1.65;margin-bottom:14px}
+.code-block{
+  background:var(--dark-4);border:1px solid var(--border-subtle);
+  border-radius:8px;padding:14px;font-family:var(--mono);font-size:.72rem;
+  color:var(--green-light);line-height:1.6;overflow-x:auto;
+}
+.code-block .cm{color:var(--text-dim)}
+.code-block .ck{color:var(--blue-light)}
+.code-block .cv{color:var(--gold)}
+.code-block .cs{color:var(--purple-light)}
+
+/* ══════════════════════════
+   PAINEL 3 — STACK TECNOLÓGICO
+══════════════════════════ */
+.stack-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;flex:1;align-content:start}
+.stack-card{
+  background:var(--dark-3);border:1px solid var(--border-subtle);
+  border-radius:14px;padding:22px;transition:all .2s;
+}
+.stack-card:hover{border-color:var(--border);transform:translateY(-3px)}
+.stack-card-header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.stack-card-icon{
+  width:40px;height:40px;border-radius:10px;
+  display:grid;place-items:center;font-size:1.1rem;flex-shrink:0;
+}
+.stack-card-title{font-size:.9rem;font-weight:500}
+.stack-card-category{font-size:.68rem;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;margin-top:2px}
+.stack-items{display:flex;flex-direction:column;gap:8px}
+.stack-item{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 12px;background:var(--dark-4);
+  border-radius:8px;border:1px solid var(--border-subtle);
+}
+.stack-item-name{font-size:.82rem;font-weight:500;flex:1}
+.stack-item-role{font-size:.72rem;color:var(--text-muted)}
+.stack-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.why-note{
+  margin-top:10px;font-size:.75rem;color:var(--text-dim);
+  line-height:1.5;padding-top:10px;border-top:1px solid var(--border-subtle);
+}
+.why-note strong{color:var(--text-muted)}
+
+/* ══════════════════════════
+   PAINEL 4 — INTEGRAÇÕES PMS
+══════════════════════════ */
+.int-layout{display:grid;grid-template-columns:1fr 1fr;gap:20px;flex:1;align-content:start}
+.int-card{
+  background:var(--dark-3);border:1px solid var(--border-subtle);
+  border-radius:14px;padding:24px;
+}
+.int-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.int-card-title{font-size:.95rem;font-weight:500}
+.int-badge{
+  font-size:.65rem;padding:3px 10px;border-radius:100px;letter-spacing:.06em;font-weight:500;
+}
+.ib-ready{background:rgba(61,155,135,0.15);color:var(--green-light);border:1px solid rgba(61,155,135,0.2)}
+.ib-wip{background:rgba(201,169,110,0.12);color:var(--gold);border:1px solid var(--border)}
+.ib-planned{background:rgba(255,255,255,0.04);color:var(--text-dim);border:1px solid var(--border-subtle)}
+.int-endpoints{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.endpoint{
+  display:flex;align-items:center;gap:8px;
+  padding:7px 12px;background:var(--dark-4);border-radius:7px;
+  font-family:var(--mono);font-size:.7rem;
+}
+.method{
+  padding:2px 7px;border-radius:4px;font-size:.62rem;font-weight:500;letter-spacing:.04em;
+}
+.get{background:rgba(61,155,135,0.2);color:var(--green-light)}
+.post{background:rgba(201,169,110,0.15);color:var(--gold)}
+.put{background:rgba(74,139,192,0.15);color:var(--blue-light)}
+.endpoint-path{color:var(--text-muted);flex:1}
+.endpoint-desc{font-size:.65rem;color:var(--text-dim);font-family:'DM Sans',sans-serif}
+.int-note{
+  font-size:.76rem;color:var(--text-muted);line-height:1.6;
+  padding-top:12px;border-top:1px solid var(--border-subtle);
+}
+.int-note strong{color:var(--text)}
+
+/* Webhook flow */
+.webhook-flow{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  margin-bottom:14px;
+}
+.wf-step{
+  background:var(--dark-4);border:1px solid var(--border-subtle);
+  border-radius:8px;padding:8px 12px;font-size:.75rem;color:var(--text-muted);
+  display:flex;align-items:center;gap:6px;
+}
+.wf-arrow{color:var(--text-dim);font-size:.8rem}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:16px">
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#C9A96E" stroke-width="1.8" stroke-linecap="round">
+          <circle cx="12" cy="8" r="4"/>
+          <circle cx="12" cy="8" r="1.5" fill="#C9A96E" stroke="none"/>
+          <line x1="12" y1="12" x2="12" y2="19"/>
+          <line x1="12" y1="15" x2="15" y2="15"/>
+          <line x1="12" y1="18" x2="14" y2="18"/>
+        </svg>
+      </div>
+      <span>Seu</span>Concierge
+    </div>
+    <span class="doc-title">Arquitetura Técnica</span>
+  </div>
+  <span class="doc-version">v1.0 · Mai 2026</span>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active" onclick="setTab(0)"><span class="tab-icon">🏗️</span>Arquitetura Geral</div>
+  <div class="tab" onclick="setTab(1)"><span class="tab-icon">🔄</span>Fluxo de Conversa</div>
+  <div class="tab" onclick="setTab(2)"><span class="tab-icon">⚙️</span>Stack Tecnológico</div>
+  <div class="tab" onclick="setTab(3)"><span class="tab-icon">🔌</span>Integrações PMS</div>
+</div>
+
+<!-- ══════════ PAINEL 1 ══════════ -->
+<div class="main">
+<div class="panel active" id="panel-0">
+  <div style="display:flex;gap:20px;flex:1;align-items:start">
+    <div style="flex:1">
+      <div class="panel-header">
+        <h2>Arquitetura do sistema</h2>
+        <p>Visão em camadas de todos os componentes do SeuConcierge. Clique em qualquer bloco para ver detalhes técnicos.</p>
+      </div>
+      <div class="arch-diagram">
+
+        <!-- Camada: Canais -->
+        <div class="arch-layer layer-channel">
+          <div class="layer-label">Canais</div>
+          <div class="layer-nodes">
+            <div class="arch-node" onclick="showDetail('whatsapp')">
+              <div class="node-icon">💬</div>
+              <div class="node-name">WhatsApp Business API</div>
+              <div class="node-desc">Canal principal de atendimento</div>
+              <div class="node-tech">Meta Cloud API v19</div>
+            </div>
+            <div class="arch-node" onclick="showDetail('webchat')">
+              <div class="node-icon">🌐</div>
+              <div class="node-name">Web Chat Widget</div>
+              <div class="node-desc">Chat embarcado no site do hotel</div>
+              <div class="node-tech">JS SDK · iframe</div>
+            </div>
+            <div class="arch-node" onclick="showDetail('email')">
+              <div class="node-icon">📧</div>
+              <div class="node-name">Email</div>
+              <div class="node-desc">Confirmações e follow-ups</div>
+              <div class="node-tech">SendGrid API</div>
+            </div>
+            <div class="arch-node" onclick="showDetail('dashboard-ch')">
+              <div class="node-icon">📊</div>
+              <div class="node-name">Dashboard Web</div>
+              <div class="node-desc">Painel do hoteleiro</div>
+              <div class="node-tech">HTML/CSS/JS · SPA</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Seta -->
+        <div style="display:flex;padding-left:146px;margin:3px 0">
+          <div style="flex:1;height:20px;display:flex;align-items:center;justify-content:center">
+            <span style="color:var(--text-dim);font-size:.75rem;letter-spacing:.06em">↕ HTTPS / WebSocket</span>
+          </div>
+        </div>
+
+        <!-- Camada: Gateway -->
+        <div class="arch-layer layer-gateway">
+          <div class="layer-label">Gateway</div>
+          <div class="layer-nodes">
+            <div class="arch-node" onclick="showDetail('gateway')" style="flex:2">
+              <div class="node-icon">🔀</div>
+              <div class="node-name">API Gateway & Webhook Router</div>
+              <div class="node-desc">Recebe mensagens, autentica, roteia para o agente correto</div>
+              <div class="node-tech">Node.js · Express · Webhook validation</div>
+            </div>
+            <div class="arch-node" onclick="showDetail('auth')">
+              <div class="node-icon">🔐</div>
+              <div class="node-name">Auth & Tenant</div>
+              <div class="node-desc">Multi-tenant, JWT, isolamento por hotel</div>
+              <div class="node-tech">JWT · bcrypt</div>
+            </div>
+            <div class="arch-node" onclick="showDetail('ratelimit')">
+              <div class="node-icon">🛡️</div>
+              <div class="node-name">Rate Limit & Queue</div>
+              <div class="node-desc">Fila de mensagens, throttling, retry</div>
+              <div class="node-tech">Redis · Bull MQ</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Seta -->
+        <div style="display:flex;padding-left:146px;margin:3px 0">
+          <div style="flex:1;height:20px;display:flex;align-items:center;justify-content:center">
+            <span style="color:var(--text-dim);font-size:.75rem;letter-spacing:.06em">↕ Internal RPC</span>
+          </div>
+        </div>
+
+        <!-- Camada: Core AI -->
+        <div class="arch-layer layer-core">
+          <div class="layer-label">Core IA</div>
+          <div class="layer-nodes">
+            <div class="arch-node" onclick="showDetail('orchestrator')" style="flex:2">
+              <div class="node-icon">🧠</div>
+              <div class="node-name">Agent Orchestrator</div>
+              <div class="node-desc">Mantém contexto, decide ações, monta o prompt final com dados do hotel</div>
+              <div class="node-tech">LangChain · Claude claude-sonnet-4-20250514 · Context Manager</div>
+            </div>
+            <div class="arch-node" onclick="showDetail('memory')">
+              <div class="node-icon">💾</div>
+              <div class="node-name">Memory & Context</div>
+              <div class="node-desc">Histórico de conversa por hóspede</div>
+              <div class="node-tech">Redis · PostgreSQL</div>
+            </div>
+            <div class="arch-node" onclick="showDetail('tools')">
+              <div class="node-icon">🔧</div>
+              <div class="node-name">Tool Use Engine</div>
+              <div class="node-desc">Verifica disponibilidade, cria reservas, envia links</div>
+              <div class="node-tech">Function calling · MCP</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Seta -->
+        <div style="display:flex;padding-left:146px;margin:3px 0">
+          <div style="flex:1;height:20px;display:flex;align-items:center;justify-content:center">
+            <span style="color:var(--text-dim);font-size:.75rem;letter-spacing:.06em">↕ REST / XML API</span>
+          </div>
+        </div>
+
+        <!-- Camada: Integrations -->
+        <div class="arch-layer layer-integration">
+          <div class="layer-label">Integrações</div>
+          <div class="layer-nodes">
+            <div class="arch-node" onclick="showDetail('cloudbeds')">
+              <div class="node-icon">🏨</div>
+              <div class="node-name">Cloudbeds</div>
+              <div class="node-desc">PMS · REST API</div>
+              <div class="node-tech">OAuth2 · v1.2</div>
+            </div>
+            <div class="arch-node" onclick="showDetail('omnibees')">
+              <div class="node-icon">🌐</div>
+              <div class="node-name">Omnibees</div>
+              <div class="node-desc">PMS + CM · OTA XML</div>
+              <div class="node-tech">XML/SOAP · cert.</div>
+            </div>
+            <div class="arch-node" onclick="showDetail('hospedin')">
+              <div class="node-icon">🇧🇷</div>
+              <div class="node-name">Hospedin</div>
+              <div class="node-desc">PMS BR · REST</div>
+              <div class="node-tech">REST · API Key</div>
+            </div>
+            <div class="arch-node" onclick="showDetail('payments')">
+              <div class="node-icon">💳</div>
+              <div class="node-name">Pagamentos</div>
+              <div class="node-desc">Stripe · Pagar.me</div>
+              <div class="node-tech">Webhooks · PIX</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Camada: Infra -->
+        <div class="arch-layer layer-infra" style="margin-top:3px">
+          <div class="layer-label">Infra</div>
+          <div class="layer-nodes">
+            <div class="arch-node" onclick="showDetail('db')">
+              <div class="node-icon">🗄️</div>
+              <div class="node-name">PostgreSQL</div>
+              <div class="node-desc">Hotéis, hóspedes, reservas</div>
+              <div class="node-tech">Supabase · pgvector</div>
+            </div>
+            <div class="arch-node" onclick="showDetail('cache')">
+              <div class="node-icon">⚡</div>
+              <div class="node-name">Redis Cache</div>
+              <div class="node-desc">Sessions, filas, rate limit</div>
+              <div class="node-tech">Upstash · Redis 7</div>
+            </div>
+            <div class="arch-node" onclick="showDetail('hosting')">
+              <div class="node-icon">☁️</div>
+              <div class="node-name">Cloud Hosting</div>
+              <div class="node-desc">Deploy, CI/CD, monitoramento</div>
+              <div class="node-tech">Railway · Vercel · GH Actions</div>
+            </div>
+            <div class="arch-node" onclick="showDetail('monitoring')">
+              <div class="node-icon">📈</div>
+              <div class="node-name">Observabilidade</div>
+              <div class="node-desc">Logs, métricas, alertas</div>
+              <div class="node-tech">Sentry · Grafana</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Detail sidebar -->
+    <div class="detail-panel" id="detailPanel">
+      <h3 id="d-title">Clique em um componente</h3>
+      <p class="d-desc" id="d-desc">Selecione qualquer bloco do diagrama para ver detalhes técnicos, responsabilidades e tecnologias utilizadas.</p>
+      <div id="d-extra"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ PAINEL 2 ══════════ -->
+<div class="panel" id="panel-1">
+  <div class="panel-header">
+    <h2>Fluxo de conversa</h2>
+    <p>Como o agente processa cada mensagem — do recebimento no WhatsApp até a resposta final ao hóspede.</p>
+  </div>
+  <div class="flow-layout">
+    <div class="flow-diagram" id="flowDiagram">
+
+      <div class="flow-step" onclick="setFlowStep(0,this)">
+        <div class="flow-connector"><div class="flow-dot">💬</div><div class="flow-line"></div></div>
+        <div class="flow-content">
+          <div class="flow-step-title">Mensagem recebida <span class="flow-badge fb-system">Webhook</span></div>
+          <div class="flow-step-desc">WhatsApp envia POST para nosso endpoint. Gateway valida a assinatura HMAC e extrai o payload.</div>
+        </div>
+      </div>
+
+      <div class="flow-step" onclick="setFlowStep(1,this)">
+        <div class="flow-connector"><div class="flow-dot">🔍</div><div class="flow-line"></div></div>
+        <div class="flow-content">
+          <div class="flow-step-title">Identificação do hotel <span class="flow-badge fb-system">Multi-tenant</span></div>
+          <div class="flow-step-desc">Identifica qual hotel/pousada é dono do número. Carrega o perfil da propriedade (nome, serviços, políticas, tom de voz).</div>
+        </div>
+      </div>
+
+      <div class="flow-step" onclick="setFlowStep(2,this)">
+        <div class="flow-connector"><div class="flow-dot">💾</div><div class="flow-line"></div></div>
+        <div class="flow-content">
+          <div class="flow-step-title">Contexto do hóspede <span class="flow-badge fb-system">Memory</span></div>
+          <div class="flow-step-desc">Busca o histórico de conversa do número no Redis. Se novo hóspede, cria perfil. Garante continuidade entre sessões.</div>
+        </div>
+      </div>
+
+      <div class="flow-step" onclick="setFlowStep(3,this)">
+        <div class="flow-connector"><div class="flow-dot">🧠</div><div class="flow-line"></div></div>
+        <div class="flow-content">
+          <div class="flow-step-title">Processamento pela IA <span class="flow-badge fb-ai">Claude API</span></div>
+          <div class="flow-step-desc">Monta o system prompt com dados do hotel + histórico. Envia para Claude claude-sonnet-4-20250514. O modelo decide se precisa chamar uma tool (verificar disponibilidade, criar reserva, etc).</div>
+        </div>
+      </div>
+
+      <div class="flow-step" onclick="setFlowStep(4,this)">
+        <div class="flow-connector"><div class="flow-dot">🔧</div><div class="flow-line"></div></div>
+        <div class="flow-content">
+          <div class="flow-step-title">Tool Use (se necessário) <span class="flow-badge fb-api">PMS API</span></div>
+          <div class="flow-step-desc">Se o modelo detectou intenção de reserva ou consulta de disponibilidade, chama a API do PMS (Cloudbeds/Omnibees) para obter dados reais em tempo real.</div>
+        </div>
+      </div>
+
+      <div class="flow-step" onclick="setFlowStep(5,this)">
+        <div class="flow-connector"><div class="flow-dot">🤔</div><div class="flow-line"></div></div>
+        <div class="flow-content">
+          <div class="flow-step-title">Decisão: IA ou humano? <span class="flow-badge fb-human">Escalada</span></div>
+          <div class="flow-step-desc">O modelo avalia se consegue resolver ou se deve escalonar. Critérios: reclamação grave, pedido explícito, dúvida complexa de contrato.</div>
+        </div>
+      </div>
+
+      <div class="flow-step" onclick="setFlowStep(6,this)">
+        <div class="flow-connector"><div class="flow-dot">📤</div><div class="flow-line"></div></div>
+        <div class="flow-content">
+          <div class="flow-step-title">Envio da resposta <span class="flow-badge fb-system">WhatsApp API</span></div>
+          <div class="flow-step-desc">Formata a resposta para o WhatsApp (texto, botões, listas). Envia via Meta Cloud API. Salva a troca no histórico.</div>
+        </div>
+      </div>
+
+      <div class="flow-step" onclick="setFlowStep(7,this)">
+        <div class="flow-connector"><div class="flow-dot">📊</div></div>
+        <div class="flow-content">
+          <div class="flow-step-title">Analytics & triggers <span class="flow-badge fb-system">Background</span></div>
+          <div class="flow-step-desc">Registra métricas (tempo de resposta, intent detectado). Dispara automações: check-in D-1, solicitação de review pós-checkout.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="flow-detail" id="flowDetail">
+      <h3 id="fd-title">Selecione uma etapa</h3>
+      <p id="fd-desc" style="font-size:.82rem;color:var(--text-muted);line-height:1.65;margin-bottom:16px">Clique em qualquer etapa do fluxo para ver o código e detalhes de implementação.</p>
+      <div id="fd-code"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ PAINEL 3 ══════════ -->
+<div class="panel" id="panel-2">
+  <div class="panel-header">
+    <h2>Stack tecnológico</h2>
+    <p>Tecnologias escolhidas para cada camada do produto — com foco em custo baixo, escalabilidade e velocidade de desenvolvimento.</p>
+  </div>
+  <div class="stack-grid">
+
+    <div class="stack-card">
+      <div class="stack-card-header">
+        <div class="stack-card-icon" style="background:rgba(138,107,192,0.1);border:1px solid rgba(138,107,192,0.2)">🧠</div>
+        <div><div class="stack-card-title">Inteligência Artificial</div><div class="stack-card-category">Core do produto</div></div>
+      </div>
+      <div class="stack-items">
+        <div class="stack-item"><div class="stack-dot" style="background:var(--purple-light)"></div><div><div class="stack-item-name">Claude claude-sonnet-4-20250514</div><div class="stack-item-role">Modelo principal de linguagem</div></div></div>
+        <div class="stack-item"><div class="stack-dot" style="background:var(--purple-light)"></div><div><div class="stack-item-name">LangChain</div><div class="stack-item-role">Orquestração de agente + tools</div></div></div>
+        <div class="stack-item"><div class="stack-dot" style="background:var(--purple-light)"></div><div><div class="stack-item-name">pgvector</div><div class="stack-item-role">Embeddings para memória semântica</div></div></div>
+      </div>
+      <div class="why-note"><strong>Por quê Claude?</strong> Melhor custo-benefício para texto em PT-BR, function calling robusto e contexto longo para histórico de conversa.</div>
+    </div>
+
+    <div class="stack-card">
+      <div class="stack-card-header">
+        <div class="stack-card-icon" style="background:rgba(74,139,192,0.1);border:1px solid rgba(74,139,192,0.2)">⚙️</div>
+        <div><div class="stack-card-title">Backend</div><div class="stack-card-category">API & lógica de negócio</div></div>
+      </div>
+      <div class="stack-items">
+        <div class="stack-item"><div class="stack-dot" style="background:var(--blue-light)"></div><div><div class="stack-item-name">Node.js + TypeScript</div><div class="stack-item-role">Runtime principal</div></div></div>
+        <div class="stack-item"><div class="stack-dot" style="background:var(--blue-light)"></div><div><div class="stack-item-name">Express.js</div><div class="stack-item-role">Rotas e webhooks</div></div></div>
+        <div class="stack-item"><div class="stack-dot" style="background:var(--blue-light)"></div><div><div class="stack-item-name">Bull MQ</div><div class="stack-item-role">Filas de processamento</div></div></div>
+        <div class="stack-item"><div class="stack-dot" style="background:var(--blue-light)"></div><div><div class="stack-item-name">Zod</div><div class="stack-item-role">Validação de schemas</div></div></div>
+      </div>
+      <div class="why-note"><strong>Por quê Node.js?</strong> Ecossistema rico para integrações, I/O assíncrono ideal para webhooks e fácil de hospedar no Railway.</div>
+    </div>
+
+    <div class="stack-card">
+      <div class="stack-card-header">
+        <div class="stack-card-icon" style="background:rgba(61,155,135,0.1);border:1px solid rgba(61,155,135,0.2)">🗄️</div>
+        <div><div class="stack-card-title">Banco de dados</div><div class="stack-card-category">Persistência & cache</div></div>
+      </div>
+      <div class="stack-items">
+        <div class="stack-item"><div class="stack-dot" style="background:var(--green-light)"></div><div><div class="stack-item-name">PostgreSQL (Supabase)</div><div class="stack-item-role">Dados principais + RLS multi-tenant</div></div></div>
+        <div class="stack-item"><div class="stack-dot" style="background:var(--green-light)"></div><div><div class="stack-item-name">Redis (Upstash)</div><div class="stack-item-role">Cache, sessões, filas</div></div></div>
+        <div class="stack-item"><div class="stack-dot" style="background:var(--green-light)"></div><div><div class="stack-item-name">Prisma ORM</div><div class="stack-item-role">Migrations e type-safe queries</div></div></div>
+      </div>
+      <div class="why-note"><strong>Por quê Supabase?</strong> PostgreSQL gerenciado com Row Level Security nativo — perfeito para isolar dados de cada hotel (multi-tenant).</div>
+    </div>
+
+    <div class="stack-card">
+      <div class="stack-card-header">
+        <div class="stack-card-icon" style="background:rgba(201,169,110,0.1);border:1px solid var(--border)">📱</div>
+        <div><div class="stack-card-title">Canais & Mensageria</div><div class="stack-card-category">Comunicação com hóspedes</div></div>
+      </div>
+      <div class="stack-items">
+        <div class="stack-item"><div class="stack-dot" style="background:var(--gold)"></div><div><div class="stack-item-name">Meta Cloud API</div><div class="stack-item-role">WhatsApp Business oficial</div></div></div>
+        <div class="stack-item"><div class="stack-dot" style="background:var(--gold)"></div><div><div class="stack-item-name">SendGrid</div><div class="stack-item-role">Emails transacionais</div></div></div>
+        <div class="stack-item"><div class="stack-dot" style="background:var(--gold)"></div><div><div class="stack-item-name">Twilio (fallback)</div><div class="stack-item-role">SMS para confirmações</div></div></div>
+      </div>
+      <div class="why-note"><strong>Por quê Meta Cloud API?</strong> API oficial evita risco de ban. Suporta botões, listas e templates — experiência superior ao WhatsApp Web não-oficial.</div>
+    </div>
+
+    <div class="stack-card">
+      <div class="stack-card-header">
+        <div class="stack-card-icon" style="background:rgba(255,255,255,0.04);border:1px solid var(--border-subtle)">☁️</div>
+        <div><div class="stack-card-title">Infraestrutura</div><div class="stack-card-category">Hosting & DevOps</div></div>
+      </div>
+      <div class="stack-items">
+        <div class="stack-item"><div class="stack-dot" style="background:var(--text-muted)"></div><div><div class="stack-item-name">Railway</div><div class="stack-item-role">Backend + workers</div></div></div>
+        <div class="stack-item"><div class="stack-dot" style="background:var(--text-muted)"></div><div><div class="stack-item-name">Vercel</div><div class="stack-item-role">Dashboard & landing page</div></div></div>
+        <div class="stack-item"><div class="stack-dot" style="background:var(--text-muted)"></div><div><div class="stack-item-name">GitHub Actions</div><div class="stack-item-role">CI/CD automático</div></div></div>
+        <div class="stack-item"><div class="stack-dot" style="background:var(--text-muted)"></div><div><div class="stack-item-name">Cloudflare</div><div class="stack-item-role">DNS, CDN, proteção DDoS</div></div></div>
+      </div>
+      <div class="why-note"><strong>Custo estimado:</strong> ~R$ 300–500/mês para até 100 clientes ativos. Escala horizontalmente sem reescrever nada.</div>
+    </div>
+
+    <div class="stack-card">
+      <div class="stack-card-header">
+        <div class="stack-card-icon" style="background:rgba(192,80,74,0.1);border:1px solid rgba(192,80,74,0.2)">📈</div>
+        <div><div class="stack-card-title">Observabilidade</div><div class="stack-card-category">Monitoramento & logs</div></div>
+      </div>
+      <div class="stack-items">
+        <div class="stack-item"><div class="stack-dot" style="background:var(--red-light)"></div><div><div class="stack-item-name">Sentry</div><div class="stack-item-role">Error tracking em produção</div></div></div>
+        <div class="stack-item"><div class="stack-dot" style="background:var(--red-light)"></div><div><div class="stack-item-name">Grafana + Loki</div><div class="stack-item-role">Logs e métricas</div></div></div>
+        <div class="stack-item"><div class="stack-dot" style="background:var(--red-light)"></div><div><div class="stack-item-name">PostHog</div><div class="stack-item-role">Analytics de produto</div></div></div>
+      </div>
+      <div class="why-note"><strong>Por quê monitorar desde o início?</strong> Com clientes pagantes, downtime custa dinheiro e reputação. Alertas em menos de 1 minuto.</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════ PAINEL 4 ══════════ -->
+<div class="panel" id="panel-3">
+  <div class="panel-header">
+    <h2>Integrações com PMS</h2>
+    <p>Detalhes técnicos de cada integração — endpoints, fluxo de autenticação e status de implementação.</p>
+  </div>
+  <div class="int-layout">
+
+    <div class="int-card">
+      <div class="int-card-header">
+        <div><div class="int-card-title">🏨 Cloudbeds</div><div style="font-size:.72rem;color:var(--text-dim);margin-top:2px">REST API · OAuth 2.0</div></div>
+        <span class="int-badge ib-ready">✓ Prioridade 1</span>
+      </div>
+      <div class="webhook-flow">
+        <div class="wf-step">🔑 OAuth2 Token</div><span class="wf-arrow">→</span>
+        <div class="wf-step">📡 API Request</div><span class="wf-arrow">→</span>
+        <div class="wf-step">📥 JSON Response</div><span class="wf-arrow">→</span>
+        <div class="wf-step">🤖 Agente</div>
+      </div>
+      <div class="int-endpoints">
+        <div class="endpoint"><span class="method get">GET</span><span class="endpoint-path">/properties/{id}/rooms/availability</span><span class="endpoint-desc">Disponibilidade</span></div>
+        <div class="endpoint"><span class="method get">GET</span><span class="endpoint-path">/properties/{id}/rates</span><span class="endpoint-desc">Tarifas</span></div>
+        <div class="endpoint"><span class="method post">POST</span><span class="endpoint-path">/reservations</span><span class="endpoint-desc">Criar reserva</span></div>
+        <div class="endpoint"><span class="method get">GET</span><span class="endpoint-path">/reservations/{id}</span><span class="endpoint-desc">Detalhes</span></div>
+        <div class="endpoint"><span class="method put">PUT</span><span class="endpoint-path">/reservations/{id}/cancel</span><span class="endpoint-desc">Cancelar</span></div>
+      </div>
+      <div class="int-note">
+        <strong>Autenticação:</strong> OAuth2 com refresh token. Cada hotel autoriza o SeuConcierge via fluxo de consentimento no painel Cloudbeds. Token renovado automaticamente a cada 24h.
+      </div>
+    </div>
+
+    <div class="int-card">
+      <div class="int-card-header">
+        <div><div class="int-card-title">🌐 Omnibees</div><div style="font-size:.72rem;color:var(--text-dim);margin-top:2px">OTA XML · Certificação parceiro</div></div>
+        <span class="int-badge ib-wip">⏳ Prioridade 2</span>
+      </div>
+      <div class="webhook-flow">
+        <div class="wf-step">📜 XML Request</div><span class="wf-arrow">→</span>
+        <div class="wf-step">🔐 SOAP Auth</div><span class="wf-arrow">→</span>
+        <div class="wf-step">📥 XML Response</div><span class="wf-arrow">→</span>
+        <div class="wf-step">🔄 Parse JSON</div>
+      </div>
+      <div class="int-endpoints">
+        <div class="endpoint"><span class="method post">POST</span><span class="endpoint-path">OTA_HotelAvailRQ</span><span class="endpoint-desc">Disponibilidade</span></div>
+        <div class="endpoint"><span class="method post">POST</span><span class="endpoint-path">OTA_HotelRateRQ</span><span class="endpoint-desc">Tarifas</span></div>
+        <div class="endpoint"><span class="method post">POST</span><span class="endpoint-path">OTA_HotelResRQ</span><span class="endpoint-desc">Criar reserva</span></div>
+        <div class="endpoint"><span class="method post">POST</span><span class="endpoint-path">OTA_CancelRQ</span><span class="endpoint-desc">Cancelar</span></div>
+      </div>
+      <div class="int-note">
+        <strong>Requisito:</strong> Certificação de parceiro tecnológico Omnibees. Processo leva ~30 dias. XML convertido para JSON internamente antes de chegar ao agente.
+      </div>
+    </div>
+
+    <div class="int-card">
+      <div class="int-card-header">
+        <div><div class="int-card-title">🇧🇷 Hospedin</div><div style="font-size:.72rem;color:var(--text-dim);margin-top:2px">REST API · API Key</div></div>
+        <span class="int-badge ib-wip">⏳ Prioridade 3</span>
+      </div>
+      <div class="webhook-flow">
+        <div class="wf-step">🔑 API Key Header</div><span class="wf-arrow">→</span>
+        <div class="wf-step">📡 REST Request</div><span class="wf-arrow">→</span>
+        <div class="wf-step">📥 JSON</div><span class="wf-arrow">→</span>
+        <div class="wf-step">🤖 Agente</div>
+      </div>
+      <div class="int-endpoints">
+        <div class="endpoint"><span class="method get">GET</span><span class="endpoint-path">/disponibilidade</span><span class="endpoint-desc">Quartos livres</span></div>
+        <div class="endpoint"><span class="method get">GET</span><span class="endpoint-path">/tarifas</span><span class="endpoint-desc">Preços por período</span></div>
+        <div class="endpoint"><span class="method post">POST</span><span class="endpoint-path">/reservas</span><span class="endpoint-desc">Nova reserva</span></div>
+        <div class="endpoint"><span class="method get">GET</span><span class="endpoint-path">/hospedes/{id}</span><span class="endpoint-desc">Dados do hóspede</span></div>
+      </div>
+      <div class="int-note">
+        <strong>Foco BR:</strong> Hospedin atende +1.700 pousadas brasileiras. API simples com API Key — integração mais rápida de implementar. Ideal para MVP com clientes menores.
+      </div>
+    </div>
+
+    <div class="int-card">
+      <div class="int-card-header">
+        <div><div class="int-card-title">🔌 Modo Standalone</div><div style="font-size:.72rem;color:var(--text-dim);margin-top:2px">Sem PMS · Configuração manual</div></div>
+        <span class="int-badge ib-ready">✓ Disponível agora</span>
+      </div>
+      <div class="webhook-flow">
+        <div class="wf-step">📝 Configura no painel</div><span class="wf-arrow">→</span>
+        <div class="wf-step">💾 Salva no DB</div><span class="wf-arrow">→</span>
+        <div class="wf-step">🤖 Agente usa dados</div>
+      </div>
+      <div class="int-endpoints">
+        <div class="endpoint"><span class="method post">DB</span><span class="endpoint-path">hotel_config.availability_rules</span><span class="endpoint-desc">Regras manuais</span></div>
+        <div class="endpoint"><span class="method post">DB</span><span class="endpoint-path">hotel_config.pricing</span><span class="endpoint-desc">Tabela de preços</span></div>
+        <div class="endpoint"><span class="method post">DB</span><span class="endpoint-path">hotel_config.policies</span><span class="endpoint-desc">Políticas e FAQ</span></div>
+        <div class="endpoint"><span class="method post">DB</span><span class="endpoint-path">hotel_config.services</span><span class="endpoint-desc">Serviços e comodidades</span></div>
+      </div>
+      <div class="int-note">
+        <strong>Estratégia de entrada:</strong> Permite onboarding imediato sem esperar integração PMS. O hoteleiro preenche os dados no dashboard e o agente já responde com informações reais.
+      </div>
+    </div>
+
+  </div>
+</div>
+</div><!-- /main -->
+
+<script>
+// ── Tabs
+function setTab(i) {
+  document.querySelectorAll('.tab').forEach((t,j) => t.classList.toggle('active', i===j));
+  document.querySelectorAll('.panel').forEach((p,j) => p.classList.toggle('active', i===j));
+}
+
+// ── Detail data for arch nodes
+const details = {
+  whatsapp:{title:'WhatsApp Business API',desc:'Canal principal de atendimento. Cada hotel conecta seu número via fluxo de autenticação Meta. Usamos a Cloud API oficial para garantir estabilidade e evitar risco de ban.',techs:['Meta Cloud API v19','Webhooks HMAC-SHA256','Templates de mensagem aprovados','Suporte a botões e listas interativas'],notes:'O número do hotel fica conectado ao SeuConcierge. Hóspedes conversam normalmente pelo WhatsApp — a experiência é transparente.'},
+  webchat:{title:'Web Chat Widget',desc:'Widget JavaScript embarcável no site do hotel. Carregado via tag de script, abre um iframe de chat. Compartilha o mesmo agente e contexto do WhatsApp.',techs:['JS SDK customizável','Tema adaptável à marca do hotel','Fallback para WhatsApp mobile','Cookie de sessão para contexto'],notes:'O hotel adiciona uma linha de script no site e o chat aparece automaticamente com as cores e nome da propriedade.'},
+  email:{title:'Email Transacional',desc:'Envio de confirmações de reserva, links de pagamento, instruções de check-in e solicitações de avaliação pós-checkout.',techs:['SendGrid API v3','Templates HTML responsivos','Tracking de abertura e clique','Unsubscribe automático por LGPD'],notes:'Emails são disparados por triggers automáticos: reserva confirmada, D-1 do check-in, D+1 do check-out.'},
+  gateway:{title:'API Gateway & Webhook Router',desc:'Ponto de entrada de todas as mensagens externas. Responsável por validar autenticidade, identificar o hotel dono do número e rotear para o agente correto.',techs:['Express.js com middlewares','Validação HMAC-SHA256 (Meta)','Rate limiting por número/hotel','Logs de auditoria de todas as mensagens'],notes:'Multi-tenant: cada número WhatsApp é mapeado para um hotel_id no banco. O gateway nunca mistura dados de hotéis diferentes.'},
+  orchestrator:{title:'Agent Orchestrator',desc:'O cérebro do produto. Monta o system prompt dinâmico com dados do hotel, injeta o histórico de conversa, chama o Claude e decide se precisa usar tools (verificar disponibilidade, criar reserva, etc).',techs:['LangChain AgentExecutor','Claude claude-sonnet-4-20250514 (Anthropic API)','System prompt dinâmico por hotel','Tool Use / Function Calling','Context window management'],notes:'O system prompt é montado a cada mensagem com: nome do hotel, tipo, localização, serviços, políticas, tom de voz escolhido e histórico da conversa.'},
+  cloudbeds:{title:'Integração Cloudbeds',desc:'PMS líder global com API REST bem documentada. Primeira integração a implementar por ter o melhor SDK e documentação pública.',techs:['OAuth2 Authorization Code Flow','REST API v1.2','Webhooks para eventos de reserva','Ambiente sandbox para testes'],notes:'O hotel autoriza o SeuConcierge via tela de consentimento no Cloudbeds. Não armazenamos senha — apenas o access token com permissões mínimas.'},
+  db:{title:'PostgreSQL via Supabase',desc:'Banco de dados principal. Row Level Security (RLS) garante que cada hotel só acessa seus próprios dados mesmo que compartilhem o mesmo banco.',techs:['PostgreSQL 15','Supabase (managed)','Row Level Security por hotel_id','pgvector para embeddings','Backups automáticos diários'],notes:'Tabelas principais: hotels, guests, conversations, messages, reservations, analytics_events.'},
+};
+
+function showDetail(key) {
+  const d = details[key]; if (!d) return;
+  document.querySelectorAll('.arch-node').forEach(n => n.classList.remove('active-node'));
+  event.currentTarget.classList.add('active-node');
+  document.getElementById('d-title').textContent = d.title;
+  document.getElementById('d-desc').textContent = d.desc;
+  const extra = document.getElementById('d-extra');
+  extra.innerHTML = `
+    <div class="detail-section">
+      <span class="detail-section-label">Tecnologias</span>
+      ${d.techs.map(t=>`<div class="detail-item">${t}</div>`).join('')}
+    </div>
+    <div class="detail-section">
+      <span class="detail-section-label">Observação</span>
+      <div style="font-size:.78rem;color:var(--text-muted);line-height:1.6">${d.notes}</div>
+    </div>`;
+}
+
+// ── Flow steps
+const flowData = [
+  {title:'Mensagem recebida',code:`<span class="cm">// Webhook handler</span>
+<span class="ck">app</span>.<span class="cv">post</span>(<span class="cs">'/webhook'</span>, async (req, res) => {
+  <span class="cm">// Valida assinatura Meta</span>
+  <span class="ck">const</span> valid = verifyHMAC(req.body, req.headers[<span class="cs">'x-hub-signature-256'</span>]);
+  <span class="ck">if</span> (!valid) <span class="ck">return</span> res.status(403).send();
+
+  <span class="ck">const</span> { from, text } = parseWhatsAppPayload(req.body);
+  await messageQueue.add({ from, text, timestamp: Date.now() });
+  res.status(200).send(<span class="cs">'OK'</span>);
+});`},
+  {title:'Identificação do hotel',code:`<span class="cm">// Resolve hotel pelo número WA</span>
+<span class="ck">const</span> hotel = await db.hotels.findFirst({
+  where: { whatsapp_number: from },
+  include: { config: true, services: true }
+});
+
+<span class="ck">if</span> (!hotel) {
+  <span class="cm">// Número não cadastrado</span>
+  <span class="ck">return</span> sendError(from, <span class="cs">'Hotel não configurado'</span>);
+}`},
+  {title:'Contexto do hóspede',code:`<span class="cm">// Busca histórico no Redis (TTL 24h)</span>
+<span class="ck">const</span> cacheKey = <span class="cs">\`conv:\${hotel.id}:\${from}\`</span>;
+<span class="ck">let</span> history = await redis.get(cacheKey);
+
+<span class="ck">if</span> (!history) {
+  <span class="cm">// Novo hóspede ou sessão expirada</span>
+  history = [];
+  await ensureGuest(from, hotel.id);
+}
+
+history.push({ role: <span class="cs">'user'</span>, content: text });`},
+  {title:'Processamento pela IA',code:`<span class="cm">// Monta system prompt dinâmico</span>
+<span class="ck">const</span> systemPrompt = buildSystemPrompt({
+  hotel: hotel.config,
+  tone: hotel.config.tone,
+  services: hotel.services
+});
+
+<span class="cm">// Chama Claude com tools disponíveis</span>
+<span class="ck">const</span> response = await anthropic.messages.create({
+  model: <span class="cs">'claude-sonnet-4-20250514'</span>,
+  system: systemPrompt,
+  messages: history,
+  tools: [checkAvailability, createReservation, sendPaymentLink],
+  max_tokens: 1000
+});`},
+  {title:'Tool Use com PMS',code:`<span class="cm">// Tool: verificar disponibilidade</span>
+<span class="ck">async function</span> checkAvailability({ checkIn, checkOut, guests }) {
+  <span class="ck">const</span> pms = getPMSAdapter(hotel.pms_type);
+  <span class="cm">// Cloudbeds, Omnibees, Hospedin ou Standalone</span>
+  <span class="ck">return</span> await pms.getAvailability({
+    propertyId: hotel.pms_property_id,
+    checkIn, checkOut, adults: guests
+  });
+}`},
+  {title:'Decisão: IA ou humano',code:`<span class="cm">// Critérios de escalada</span>
+<span class="ck">const</span> shouldEscalate = (response) => {
+  <span class="ck">return</span> (
+    response.includes(<span class="cs">'reclamação'</span>) ||
+    response.includes(<span class="cs">'falar com'</span>) ||
+    response.includes(<span class="cs">'gerente'</span>) ||
+    response.stopReason === <span class="cs">'tool_use_required_human'</span>
+  );
+};
+
+<span class="ck">if</span> (shouldEscalate(agentReply)) {
+  await notifyStaff(hotel, from, conversation);
+}`},
+  {title:'Envio da resposta',code:`<span class="cm">// Formata e envia via Meta API</span>
+<span class="ck">await</span> whatsapp.send({
+  to: from,
+  type: <span class="cs">'text'</span>,
+  text: { body: agentReply }
+});
+
+<span class="cm">// Salva no Redis e banco</span>
+history.push({ role: <span class="cs">'assistant'</span>, content: agentReply });
+<span class="ck">await</span> redis.setex(cacheKey, 86400, JSON.stringify(history));
+<span class="ck">await</span> saveMessage(hotel.id, from, agentReply);`},
+  {title:'Analytics & triggers',code:`<span class="cm">// Registra evento de analytics</span>
+<span class="ck">await</span> analytics.track({
+  hotelId: hotel.id,
+  event: <span class="cs">'message_handled'</span>,
+  props: { intent, responseTimeMs, resolved }
+});
+
+<span class="cm">// Dispara automações agendadas</span>
+<span class="ck">await</span> scheduler.checkTriggers(hotel.id, from, {
+  checkIn: reservation?.checkIn,
+  checkOut: reservation?.checkOut
+});`}
+];
+
+function setFlowStep(i, el) {
+  document.querySelectorAll('.flow-step').forEach(s => s.classList.remove('active-step'));
+  el.classList.add('active-step');
+  const d = flowData[i];
+  document.getElementById('fd-title').textContent = d.title;
+  document.getElementById('fd-desc').textContent = '';
+  document.getElementById('fd-code').innerHTML = `<div class="code-block">${d.code}</div>`;
+}
+</script>
+</body>
+</html>
