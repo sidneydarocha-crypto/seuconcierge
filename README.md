@@ -1,0 +1,367 @@
+[apresentacao.html](https://github.com/user-attachments/files/28934888/apresentacao.html)
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="google" content="notranslate">
+<title>SeuConcierge — Apresentação</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{
+  --gold:#C9A96E;--gold-light:#E8D5A3;--gold-dark:#8B6D3F;
+  --dark:#0D0D0D;--dark-2:#141414;--dark-3:#1C1C1C;--dark-4:#252525;
+  --text:#F0EDE8;--text-muted:#8A8680;--text-dim:#4A4845;
+  --green:#3D9B87;--border:rgba(201,169,110,0.18);--border-subtle:rgba(255,255,255,0.06);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--dark);color:var(--text);font-family:'DM Sans',sans-serif;font-weight:300;-webkit-tap-highlight-color:transparent}
+
+/* ═══ LANG SWITCHER ═══ */
+.lang-bar{
+  position:fixed;top:0;left:0;right:0;z-index:200;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 28px;
+  background:rgba(13,13,13,0.95);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border-subtle);
+}
+.logo{font-family:'DM Serif Display',serif;font-size:1.1rem;letter-spacing:.3px}
+.logo em{color:var(--gold);font-style:italic}
+.flags{display:flex;gap:10px;align-items:center}
+.flag-btn{
+  width:44px;height:30px;border-radius:6px;overflow:hidden;
+  border:2px solid transparent;cursor:pointer;transition:all .2s;
+  opacity:.5;transform:scale(.95);flex-shrink:0;background:none;padding:0;
+}
+.flag-btn.active{border-color:var(--gold);opacity:1;transform:scale(1.05)}
+.flag-btn:hover{opacity:.85;transform:scale(1)}
+.flag-btn svg{width:100%;height:100%;display:block}
+
+/* ═══ SLIDES ═══ */
+.slides{position:fixed;inset:0;top:54px}
+.slide{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:36px 32px 90px;text-align:center;
+  opacity:0;visibility:hidden;transform:translateX(40px);
+  transition:opacity .45s ease,transform .45s ease,visibility .45s;
+}
+.slide.active{opacity:1;visibility:visible;transform:translateX(0)}
+.slide.out{transform:translateX(-40px)}
+
+.eyebrow{
+  font-size:.7rem;letter-spacing:3px;text-transform:uppercase;
+  color:var(--gold);font-weight:500;margin-bottom:18px;
+}
+.slide h1{
+  font-family:'DM Serif Display',serif;font-weight:400;
+  font-size:clamp(2.1rem,7vw,3.6rem);line-height:1.08;margin-bottom:18px;
+}
+.slide h1 em{color:var(--gold);font-style:italic}
+.slide h2{
+  font-family:'DM Serif Display',serif;font-weight:400;
+  font-size:clamp(1.6rem,5vw,2.6rem);line-height:1.12;margin-bottom:22px;
+}
+.slide h2 em{color:var(--gold);font-style:italic}
+.lead{font-size:clamp(1rem,2.6vw,1.25rem);color:var(--text-muted);max-width:560px;line-height:1.6}
+
+/* key icon */
+.key-mark{margin-bottom:26px}
+.key-mark svg{width:74px;height:74px}
+
+/* feature list */
+.feat-list{display:flex;flex-direction:column;gap:16px;margin-top:8px;max-width:520px;width:100%}
+.feat{
+  display:flex;align-items:center;gap:16px;text-align:left;
+  background:var(--dark-2);border:1px solid var(--border);
+  border-radius:14px;padding:16px 20px;
+}
+.feat-ic{
+  width:42px;height:42px;border-radius:10px;flex-shrink:0;
+  background:rgba(201,169,110,0.12);
+  display:flex;align-items:center;justify-content:center;
+}
+.feat-ic svg{width:22px;height:22px;stroke:var(--gold)}
+.feat-tx strong{display:block;font-weight:500;font-size:1rem;margin-bottom:2px}
+.feat-tx span{font-size:.85rem;color:var(--text-muted)}
+
+/* pricing */
+.price-row{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;margin-top:10px}
+.price-card{
+  background:var(--dark-2);border:1px solid var(--border);border-radius:18px;
+  padding:28px 30px;min-width:210px;
+}
+.price-card.feature{border-color:var(--gold);background:linear-gradient(160deg,var(--dark-3),var(--dark-2))}
+.price-tier{font-size:.72rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:12px;font-weight:500}
+.price-val{font-family:'DM Serif Display',serif;font-size:2.4rem;line-height:1}
+.price-val small{font-size:.9rem;color:var(--text-muted);font-family:'DM Sans',sans-serif}
+.price-note{font-size:.82rem;color:var(--text-muted);margin-top:10px}
+
+/* QR slide */
+.qr-box{
+  background:#fff;padding:18px;border-radius:18px;display:inline-block;margin-bottom:24px;
+  box-shadow:0 12px 40px rgba(0,0,0,.4);
+}
+.qr-box img,.qr-box canvas{display:block;border-radius:6px}
+.qr-url{font-size:1.05rem;color:var(--gold);letter-spacing:.5px;margin-top:4px}
+
+/* ═══ NAV ═══ */
+.nav{
+  position:fixed;bottom:0;left:0;right:0;z-index:150;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 28px;background:rgba(13,13,13,0.95);backdrop-filter:blur(20px);
+  border-top:1px solid var(--border-subtle);
+}
+.nav-btn{
+  width:46px;height:46px;border-radius:50%;
+  background:rgba(201,169,110,0.1);border:1px solid var(--border);
+  color:var(--gold);cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all .2s;
+}
+.nav-btn:hover{background:rgba(201,169,110,0.2)}
+.nav-btn:disabled{opacity:.25;cursor:default}
+.nav-btn svg{width:20px;height:20px}
+.dots{display:flex;gap:10px}
+.nav-dot{width:8px;height:8px;border-radius:50%;background:var(--text-dim);transition:all .3s;cursor:pointer}
+.nav-dot.active{background:var(--gold);width:26px;border-radius:4px}
+.counter{font-size:.8rem;color:var(--text-muted);min-width:54px;text-align:right;letter-spacing:1px}
+
+@media(max-width:420px){
+  .lang-bar{padding:10px 18px}
+  .flag-btn{width:38px;height:26px}
+  .nav{padding:14px 18px}
+}
+</style>
+</head>
+<body class="notranslate">
+
+<!-- LANG BAR -->
+<div class="lang-bar">
+  <div class="logo">Seu<em>Concierge</em></div>
+  <div class="flags">
+    <button class="flag-btn active" onclick="setLang('pt')" aria-label="Português">
+      <svg viewBox="0 0 28 20"><rect width="28" height="20" fill="#009b3a"/><path d="M14 3 L25 10 L14 17 L3 10 Z" fill="#fedf00"/><circle cx="14" cy="10" r="4" fill="#002776"/></svg>
+    </button>
+    <button class="flag-btn" onclick="setLang('en')" aria-label="English">
+      <svg viewBox="0 0 28 20"><rect width="28" height="20" fill="#012169"/><path d="M0 0 L28 20 M28 0 L0 20" stroke="#fff" stroke-width="3"/><path d="M14 0 V20 M0 10 H28" stroke="#fff" stroke-width="5"/><path d="M14 0 V20 M0 10 H28" stroke="#c8102e" stroke-width="3"/></svg>
+    </button>
+    <button class="flag-btn" onclick="setLang('es')" aria-label="Español">
+      <svg viewBox="0 0 28 20"><rect width="28" height="20" fill="#c60b1e"/><rect y="5" width="28" height="10" fill="#ffc400"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- SLIDES -->
+<div class="slides">
+
+  <!-- 1 — CAPA -->
+  <div class="slide active">
+    <div class="key-mark">
+      <svg viewBox="0 0 100 100" fill="none" stroke="#C9A96E" stroke-width="5">
+        <circle cx="38" cy="34" r="20"/><circle cx="38" cy="34" r="9"/>
+        <path d="M52 48 L78 74" stroke-linecap="round"/><path d="M78 74 L88 64" stroke-linecap="round"/><path d="M70 66 L78 58" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="eyebrow" id="s1-eye">Inteligência artificial para hotelaria</div>
+    <h1 id="s1-title">O concierge que <em>nunca dorme</em></h1>
+    <p class="lead" id="s1-lead">Um agente de IA que atende seus hóspedes pelo WhatsApp, 24 horas por dia, 7 dias por semana.</p>
+  </div>
+
+  <!-- 2 — PROBLEMA -->
+  <div class="slide">
+    <div class="eyebrow" id="s2-eye">O desafio</div>
+    <h2 id="s2-title">Hóspede sem resposta é <em>reserva perdida</em></h2>
+    <p class="lead" id="s2-lead">Mensagens fora do horário, dúvidas repetidas e avaliações esquecidas custam reservas e reputação todos os dias. Sua equipe não consegue estar disponível o tempo todo — mas o seu concierge de IA consegue.</p>
+  </div>
+
+  <!-- 3 — SOLUÇÃO -->
+  <div class="slide">
+    <div class="eyebrow" id="s3-eye">Como funciona</div>
+    <h2 id="s3-title">Atendimento completo, <em>automático</em></h2>
+    <div class="feat-list">
+      <div class="feat">
+        <div class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div>
+        <div class="feat-tx"><strong id="s3-f1t">Responde na hora</strong><span id="s3-f1s">Dúvidas sobre check-in, Wi-Fi, serviços e a região.</span></div>
+      </div>
+      <div class="feat">
+        <div class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+        <div class="feat-tx"><strong id="s3-f2t">Confirma reservas</strong><span id="s3-f2s">Envia instruções de check-in automaticamente.</span></div>
+      </div>
+      <div class="feat">
+        <div class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+        <div class="feat-tx"><strong id="s3-f3t">Solicita avaliações</strong><span id="s3-f3s">Pede notas no Google e Booking após o check-out.</span></div>
+      </div>
+      <div class="feat">
+        <div class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
+        <div class="feat-tx"><strong id="s3-f4t">Atende estrangeiros</strong><span id="s3-f4s">Conversa em inglês e espanhol com seus hóspedes.</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4 — PLANOS -->
+  <div class="slide">
+    <div class="eyebrow" id="s4-eye">Planos</div>
+    <h2 id="s4-title">Comece com <em>14 dias grátis</em></h2>
+    <div class="price-row">
+      <div class="price-card">
+        <div class="price-tier">Essencial</div>
+        <div class="price-val">R$197<small>/mês</small></div>
+        <div class="price-note" id="s4-n1">Atendimento 24/7 via WhatsApp</div>
+      </div>
+      <div class="price-card feature">
+        <div class="price-tier">Profissional</div>
+        <div class="price-val">R$397<small>/mês</small></div>
+        <div class="price-note" id="s4-n2">Multi-idiomas, voz personalizada e relatórios</div>
+      </div>
+    </div>
+    <p class="lead" id="s4-lead" style="margin-top:24px;font-size:.95rem">Sem cartão de crédito. Cancele quando quiser.</p>
+  </div>
+
+  <!-- 5 — QR / CTA -->
+  <div class="slide">
+    <div class="eyebrow" id="s5-eye">Conheça agora</div>
+    <div class="qr-box"><div id="qr-main"></div></div>
+    <div class="qr-url">seuconcierge.app.br</div>
+    <p class="lead" id="s5-lead" style="margin-top:14px">Aponte a câmera do seu celular e teste o agente você mesmo.</p>
+  </div>
+
+</div>
+
+<!-- NAV -->
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="prev()" aria-label="Anterior">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+  </button>
+  <div class="dots" id="dots"></div>
+  <span class="counter" id="counter">1 / 5</span>
+  <button class="nav-btn" id="nextBtn" onclick="next()" aria-label="Próximo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+  </button>
+</div>
+
+<script>
+const T = {
+  pt:{
+    's1-eye':'Inteligência artificial para hotelaria',
+    's1-title':'O concierge que <em>nunca dorme</em>',
+    's1-lead':'Um agente de IA que atende seus hóspedes pelo WhatsApp, 24 horas por dia, 7 dias por semana.',
+    's2-eye':'O desafio',
+    's2-title':'Hóspede sem resposta é <em>reserva perdida</em>',
+    's2-lead':'Mensagens fora do horário, dúvidas repetidas e avaliações esquecidas custam reservas e reputação todos os dias. Sua equipe não consegue estar disponível o tempo todo — mas o seu concierge de IA consegue.',
+    's3-eye':'Como funciona',
+    's3-title':'Atendimento completo, <em>automático</em>',
+    's3-f1t':'Responde na hora','s3-f1s':'Dúvidas sobre check-in, Wi-Fi, serviços e a região.',
+    's3-f2t':'Confirma reservas','s3-f2s':'Envia instruções de check-in automaticamente.',
+    's3-f3t':'Solicita avaliações','s3-f3s':'Pede notas no Google e Booking após o check-out.',
+    's3-f4t':'Atende estrangeiros','s3-f4s':'Conversa em inglês e espanhol com seus hóspedes.',
+    's4-eye':'Planos','s4-title':'Comece com <em>14 dias grátis</em>',
+    's4-n1':'Atendimento 24/7 via WhatsApp','s4-n2':'Multi-idiomas, voz personalizada e relatórios',
+    's4-lead':'Sem cartão de crédito. Cancele quando quiser.',
+    's5-eye':'Conheça agora','s5-lead':'Aponte a câmera do seu celular e teste o agente você mesmo.'
+  },
+  en:{
+    's1-eye':'Artificial intelligence for hospitality',
+    's1-title':'The concierge that <em>never sleeps</em>',
+    's1-lead':'An AI agent that assists your guests on WhatsApp, 24 hours a day, 7 days a week.',
+    's2-eye':'The challenge',
+    's2-title':'An unanswered guest is a <em>lost booking</em>',
+    's2-lead':'After-hours messages, repeated questions and forgotten reviews cost you bookings and reputation every day. Your team can\u2019t be available around the clock — but your AI concierge can.',
+    's3-eye':'How it works',
+    's3-title':'Complete service, <em>automated</em>',
+    's3-f1t':'Instant replies','s3-f1s':'Check-in, Wi-Fi, services and local tips.',
+    's3-f2t':'Confirms bookings','s3-f2s':'Sends check-in instructions automatically.',
+    's3-f3t':'Requests reviews','s3-f3s':'Asks for ratings on Google and Booking after check-out.',
+    's3-f4t':'Serves foreigners','s3-f4s':'Talks to your guests in English and Spanish.',
+    's4-eye':'Plans','s4-title':'Start with <em>14 days free</em>',
+    's4-n1':'24/7 service via WhatsApp','s4-n2':'Multi-language, custom voice and reports',
+    's4-lead':'No credit card. Cancel anytime.',
+    's5-eye':'Discover it now','s5-lead':'Point your phone camera and try the agent yourself.'
+  },
+  es:{
+    's1-eye':'Inteligencia artificial para hotelería',
+    's1-title':'El conserje que <em>nunca duerme</em>',
+    's1-lead':'Un agente de IA que atiende a tus huéspedes por WhatsApp, 24 horas al día, 7 días a la semana.',
+    's2-eye':'El desafío',
+    's2-title':'Un huésped sin respuesta es una <em>reserva perdida</em>',
+    's2-lead':'Mensajes fuera de horario, dudas repetidas y reseñas olvidadas cuestan reservas y reputación cada día. Tu equipo no puede estar disponible todo el tiempo — pero tu conserje de IA sí.',
+    's3-eye':'Cómo funciona',
+    's3-title':'Atención completa, <em>automática</em>',
+    's3-f1t':'Responde al instante','s3-f1s':'Dudas sobre check-in, Wi-Fi, servicios y la zona.',
+    's3-f2t':'Confirma reservas','s3-f2s':'Envía instrucciones de check-in automáticamente.',
+    's3-f3t':'Solicita reseñas','s3-f3s':'Pide valoraciones en Google y Booking tras el check-out.',
+    's3-f4t':'Atiende extranjeros','s3-f4s':'Conversa en inglés y español con tus huéspedes.',
+    's4-eye':'Planes','s4-title':'Empieza con <em>14 días gratis</em>',
+    's4-n1':'Atención 24/7 por WhatsApp','s4-n2':'Multi-idioma, voz personalizada e informes',
+    's4-lead':'Sin tarjeta de crédito. Cancela cuando quieras.',
+    's5-eye':'Conócelo ahora','s5-lead':'Apunta la cámara de tu celular y prueba el agente tú mismo.'
+  }
+};
+
+let currentLang='pt';
+let currentSlide=0;
+const totalSlides=5;
+
+function setLang(lang){
+  currentLang=lang;
+  document.querySelectorAll('.flag-btn').forEach(b=>b.classList.remove('active'));
+  const idx=['pt','en','es'].indexOf(lang);
+  document.querySelectorAll('.flag-btn')[idx].classList.add('active');
+  const t=T[lang];
+  Object.keys(t).forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=t[id];});
+}
+
+const slidesEl=document.querySelectorAll('.slide');
+const dotsWrap=document.getElementById('dots');
+for(let i=0;i<totalSlides;i++){
+  const d=document.createElement('div');
+  d.className='nav-dot'+(i===0?' active':'');
+  d.onclick=()=>goTo(i);
+  dotsWrap.appendChild(d);
+}
+const dots=document.querySelectorAll('.nav-dot');
+
+function goTo(n){
+  if(n===currentSlide)return;
+  slidesEl[currentSlide].classList.remove('active');
+  slidesEl[currentSlide].classList.add('out');
+  const prevIdx=currentSlide;
+  setTimeout(()=>slidesEl[prevIdx].classList.remove('out'),450);
+  currentSlide=n;
+  slidesEl[currentSlide].classList.add('active');
+  dots.forEach((d,i)=>d.classList.toggle('active',i===currentSlide));
+  document.getElementById('counter').textContent=(currentSlide+1)+' / '+totalSlides;
+  document.getElementById('prevBtn').disabled=currentSlide===0;
+  document.getElementById('nextBtn').disabled=currentSlide===totalSlides-1;
+}
+function next(){if(currentSlide<totalSlides-1)goTo(currentSlide+1);}
+function prev(){if(currentSlide>0)goTo(currentSlide-1);}
+
+let touchStartX=0;
+const slidesContainer=document.querySelector('.slides');
+slidesContainer.addEventListener('touchstart',e=>touchStartX=e.touches[0].clientX,{passive:true});
+slidesContainer.addEventListener('touchend',e=>{
+  const diff=touchStartX-e.changedTouches[0].clientX;
+  if(Math.abs(diff)>50)diff>0?next():prev();
+},{passive:true});
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='ArrowDown')next();
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp')prev();
+});
+
+window.addEventListener('load',()=>{
+  new QRCode(document.getElementById('qr-main'),{
+    text:'https://seuconcierge.app.br',
+    width:170,height:170,
+    colorDark:'#0D0D0D',colorLight:'#ffffff',
+    correctLevel:QRCode.CorrectLevel.H
+  });
+  document.getElementById('prevBtn').disabled=true;
+});
+</script>
+</body>
+</html>
